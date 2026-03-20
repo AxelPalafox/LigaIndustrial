@@ -839,8 +839,16 @@
       }
 
       function verificarLineupGuardado() {
-        var partido = document.getElementById('equipo-select-partido').value; var btn = document.getElementById('btn-enviar-lineup');
-        document.querySelectorAll('.chk-jugador').forEach(cb => { cb.checked = false; document.getElementById('pos-' + cb.id.substring(4)).disabled = true; }); 
+        var partido = document.getElementById('equipo-select-partido').value; 
+        var btn = document.getElementById('btn-enviar-lineup');
+        
+        // Limpiamos los checkboxes visualmente
+        document.querySelectorAll('.chk-jugador').forEach(cb => { 
+           cb.checked = false; 
+           let sel = document.getElementById('pos-' + cb.id.substring(4)); 
+           if(sel) sel.disabled = true; 
+        }); 
+        
         lineupSeleccionado = []; ordenJugadoresClic = []; actualizarPizarraLineup();
         btn.innerText = "Enviar Lineup Oficial"; btn.style.backgroundColor = "#1a237e"; btn.disabled = false;
         
@@ -898,19 +906,30 @@
          }); 
          vista.innerHTML = html + '</ol>'; 
       }
-      
+      // ESTA ES LA FUNCIÓN QUE FALTABA
+      function juegoExpirado(partidoInfo) {
+        let p = todosLosPartidos.find(x => `${x[0]} ${x[1]} | ${x[3]} vs ${x[4]}` === partidoInfo);
+        if(!p) return false; let fStr = p[0]; let hStr = p[1]; if (!fStr) return false;
+        let gameDate = parseGameDate(fStr, hStr);
+        if(!gameDate) return false;
+        gameDate.setMinutes(gameDate.getMinutes() + 20); 
+        return new Date() > gameDate;
+      }
+
       function enviarLineup() {
         var partido = document.getElementById('equipo-select-partido').value;
         let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
         let eqBuscado = esPrivilegiado ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
 
-        if(esPrivilegiado) { if(eqBuscado === "") { alert("Selecciona a qué equipo le estás registrando el lineup."); return; } }
-        if(partido === "") return;
+        if(esPrivilegiado) { if(eqBuscado === "") { alert("Selecciona a qué equipo le estás registrando el lineup arriba en el menú de ADMIN/ANOTADOR."); return; } }
+        if(partido === "") { alert("Selecciona un partido primero."); return; }
         if(lineupSeleccionado.length === 0) { if(!confirm("⚠️ Estás a punto de guardar un roster VACÍO. Esto borrará el lineup anterior. ¿Seguro?")) return; }
         if (juegoExpirado(partido) && !esPrivilegiado) { alert("El tiempo de tolerancia (10 min) ha expirado."); return; }
         
-        var btn = document.getElementById('btn-enviar-lineup'); btn.innerText = "Guardando..."; btn.disabled=true;
-        google.script.run.withSuccessHandler(res => { btn.innerText = "✅ Guardado"; btn.disabled = false; }).guardarLineupDia(partido, eqBuscado, lineupSeleccionado);
+        var btn = document.getElementById('btn-enviar-lineup'); btn.innerText = "Guardando..."; btn.disabled = true;
+        google.script.run.withSuccessHandler(res => { 
+           btn.innerText = "✅ Guardado"; btn.disabled = false; 
+        }).guardarLineupDia(partido, eqBuscado, lineupSeleccionado);
       }
 
       function llenarSelectorAnotador() {
