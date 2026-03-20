@@ -3,7 +3,7 @@
   <head>
     <base target="_top">
     <title>Liga Industrial</title>
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/53/53283.png">
+    <link rel="icon" type="image/png" href="https://img.freepik.com/fotos-premium/pelota-beisbol-ondas-electricas_311470-153.jpg">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
@@ -614,25 +614,46 @@
       function prepararPanelEquipo(nombre) {
         lineupSeleccionado = []; ordenJugadoresClic = []; actualizarPizarraLineup(); 
         
+        let esAnotador = (nombre.toUpperCase() === "ANOTADOR");
+        let esPrivilegiado = esAdminGlobal || esAnotador; // Otorga superpoderes de Lineup
+        
+        // El panel de administrador (crear juegos, equipos) SOLO lo ve el Admin real
         if (esAdminGlobal) { 
-          document.getElementById('panel-admin-partidos').style.display = 'block'; document.getElementById('contenedor-admin-equipo').style.display = 'block'; document.getElementById('panel-admin-rosters').style.display = 'block'; document.getElementById('panel-admin-equipos').style.display = 'block'; 
+          document.getElementById('panel-admin-partidos').style.display = 'block'; 
+          document.getElementById('panel-admin-rosters').style.display = 'block'; 
+          document.getElementById('panel-admin-equipos').style.display = 'block'; 
           inicializarAdminPartidos();
           
           google.script.run.withSuccessHandler(equipos => {
-            let selE = document.getElementById('admin-select-equipo'); let selR = document.getElementById('admin-roster-equipo'); let selDel = document.getElementById('baja-eq-sel');
-            selE.innerHTML = '<option value="">Selecciona equipo...</option>'; selR.innerHTML = '<option value="">Selecciona un equipo a editar...</option>'; selDel.innerHTML = '<option value="">Selecciona equipo a eliminar...</option>';
+            let selR = document.getElementById('admin-roster-equipo'); let selDel = document.getElementById('baja-eq-sel');
+            selR.innerHTML = '<option value="">Selecciona un equipo a editar...</option>'; selDel.innerHTML = '<option value="">Selecciona equipo a eliminar...</option>';
             let unicos = []; equipos.forEach(e => { if(!unicos.includes(e[1]) && e[1] !== "AGENCIA LIBRE") unicos.push(e[1]); }); 
-            unicos.filter(e => e).sort().forEach(e => { selE.innerHTML += `<option value="${e}">${e}</option>`; selR.innerHTML += `<option value="${e}">${e}</option>`; selDel.innerHTML += `<option value="${e}">${e}</option>`; });
+            unicos.filter(e => e).sort().forEach(e => { selR.innerHTML += `<option value="${e}">${e}</option>`; selDel.innerHTML += `<option value="${e}">${e}</option>`; });
+          }).obtenerEquipos();
+        } else {
+          document.getElementById('panel-admin-partidos').style.display = 'none'; 
+          document.getElementById('panel-admin-rosters').style.display = 'none'; 
+          document.getElementById('panel-admin-equipos').style.display = 'none';
+        }
+
+        // El panel de Elegir Equipo para el Lineup lo ven el Admin Y el Anotador
+        if (esPrivilegiado) {
+          document.getElementById('contenedor-admin-equipo').style.display = 'block';
+          google.script.run.withSuccessHandler(equipos => {
+            let selE = document.getElementById('admin-select-equipo');
+            selE.innerHTML = '<option value="">Selecciona equipo...</option>'; 
+            let unicos = []; equipos.forEach(e => { if(!unicos.includes(e[1]) && e[1] !== "AGENCIA LIBRE") unicos.push(e[1]); }); 
+            unicos.filter(e => e).sort().forEach(e => { selE.innerHTML += `<option value="${e}">${e}</option>`; });
           }).obtenerEquipos();
           document.getElementById('contenedor-jugadores-lineup').innerHTML = '<p style="color:#888; grid-column:span 2; text-align:center;">Elige equipo arriba.</p>';
         } else {
-          document.getElementById('panel-admin-partidos').style.display = 'none'; document.getElementById('contenedor-admin-equipo').style.display = 'none'; document.getElementById('panel-admin-rosters').style.display = 'none'; document.getElementById('panel-admin-equipos').style.display = 'none';
+          document.getElementById('contenedor-admin-equipo').style.display = 'none';
           document.getElementById('contenedor-jugadores-lineup').innerHTML = '<p style="grid-column:span 2; text-align:center;">Cargando jugadores...</p>';
           cargarCheckboxesRoster(nombre);
         }
 
         let jUnicas = []; todosLosPartidos.forEach(p => { 
-            if (esAdminGlobal || p[3]===nombre || p[4]===nombre) {
+            if (esPrivilegiado || p[3]===nombre || p[4]===nombre) {
                 let j = p[6]?p[6].trim():""; if(j!=="" && !jUnicas.includes(j)) jUnicas.push(j); 
             }
         });
@@ -802,12 +823,13 @@
         var selP = document.getElementById('equipo-select-partido'); 
         selP.innerHTML = '<option value="">Selecciona el partido...</option>';
         
-        let nombreCriterio = esAdminGlobal ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
+        let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
+        let nombreCriterio = esPrivilegiado ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
         
         todosLosPartidos.forEach(p => { 
             let j = p[6]?p[6].trim():"";
             if(selJ === "TODAS" || selJ === j) {
-                if (esAdminGlobal || p[3]===nombreCriterio || p[4]===nombreCriterio) {
+                if (esPrivilegiado || p[3]===nombreCriterio || p[4]===nombreCriterio) {
                     selP.innerHTML += `<option value="${p[0]} ${p[1]} | ${p[3]} vs ${p[4]}">${p[0]} ${p[1]} | ${p[3]} vs ${p[4]}</option>`; 
                 }
             }
@@ -822,19 +844,11 @@
         lineupSeleccionado = []; ordenJugadoresClic = []; actualizarPizarraLineup();
         btn.innerText = "Enviar Lineup Oficial"; btn.style.backgroundColor = "#1a237e"; btn.disabled = false;
         
-        let eqBuscado = esAdminGlobal ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
+        let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
+        let eqBuscado = esPrivilegiado ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
         if (partido === "" || eqBuscado === "") return; 
         
-        let pCheck = todosLosPartidos.find(x => `${x[0]} ${x[1]} | ${x[3]} vs ${x[4]}` === partido);
-        let expirado = false;
-        if(pCheck) {
-            let gDate = parseGameDate(pCheck[0], pCheck[1]);
-            if(gDate) {
-               let gameDateTolerancia = new Date(gDate.getTime());
-               gameDateTolerancia.setMinutes(gameDateTolerancia.getMinutes() + 10);
-               expirado = (new Date() > gameDateTolerancia);
-            }
-        }
+        let expirado = juegoExpirado(partido);
 
         document.getElementById('vista-orden-bateo').innerHTML = '<p style="color:#aaa; text-align:center;">Buscando si enviaste uno...</p>';
         google.script.run.withSuccessHandler(exist => {
@@ -852,7 +866,7 @@
           }
           actualizarPizarraLineup();
           
-          if (expirado && !esAdminGlobal) { 
+          if (expirado && !esPrivilegiado) { 
              btn.innerText = "⏳ Tiempo Expirado"; btn.disabled = true; document.getElementById('vista-orden-bateo').innerHTML += '<p style="color:#d32f2f; font-weight:bold; font-size:12px; text-align:center; margin-top:10px;">El juego inició hace más de 10 minutos. No se puede modificar el roster.</p>'; 
           }
         }).obtenerLineupExistente(partido, eqBuscado);
@@ -887,24 +901,13 @@
       
       function enviarLineup() {
         var partido = document.getElementById('equipo-select-partido').value;
-        let eqBuscado = esAdminGlobal ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
+        let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
+        let eqBuscado = esPrivilegiado ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
 
-        if(esAdminGlobal) { if(eqBuscado === "") { alert("Admin: Selecciona a qué equipo le estás registrando el lineup."); return; } }
+        if(esPrivilegiado) { if(eqBuscado === "") { alert("Selecciona a qué equipo le estás registrando el lineup."); return; } }
         if(partido === "") return;
         if(lineupSeleccionado.length === 0) { if(!confirm("⚠️ Estás a punto de guardar un roster VACÍO. Esto borrará el lineup anterior. ¿Seguro?")) return; }
-        
-        let pCheck = todosLosPartidos.find(x => `${x[0]} ${x[1]} | ${x[3]} vs ${x[4]}` === partido);
-        let expirado = false;
-        if(pCheck) {
-            let gDate = parseGameDate(pCheck[0], pCheck[1]);
-            if(gDate) {
-               let gameDateTolerancia = new Date(gDate.getTime());
-               gameDateTolerancia.setMinutes(gameDateTolerancia.getMinutes() + 10);
-               expirado = (new Date() > gameDateTolerancia);
-            }
-        }
-
-        if (expirado && !esAdminGlobal) { alert("El tiempo de tolerancia (10 min) ha expirado."); return; }
+        if (juegoExpirado(partido) && !esPrivilegiado) { alert("El tiempo de tolerancia (10 min) ha expirado."); return; }
         
         var btn = document.getElementById('btn-enviar-lineup'); btn.innerText = "Guardando..."; btn.disabled=true;
         google.script.run.withSuccessHandler(res => { btn.innerText = "✅ Guardado"; btn.disabled = false; }).guardarLineupDia(partido, eqBuscado, lineupSeleccionado);
@@ -934,22 +937,23 @@
         document.getElementById('msj-anotador').innerText = "Cargando Scorebook..."; document.getElementById('area-scorebook').style.display = 'none';
         
         let btnFin = document.getElementById('btn-finalizar-juego');
-        let esInvitado = (equipoActivoGlobal === ""); // VERIFICA SI NO HA INICIADO SESIÓN
+        let esInvitado = (equipoActivoGlobal === ""); 
+        let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
         
         if (esInvitado) {
-            btnFin.style.display = "none"; // Oculta el botón a los espectadores
+            btnFin.style.display = "none"; 
         } else {
-            btnFin.style.display = "block"; // Muestra el botón a los admins/equipos
+            btnFin.style.display = "block"; 
             let pCheck = todosLosPartidos.find(x => `${x[0]} ${x[1]} | ${x[3]} vs ${x[4]}` === sel.value);
             if (pCheck && pCheck[7] !== "" && pCheck[8] !== "") {
-               if (!esAdminGlobal) { btnFin.innerText = "🔒 Juego Finalizado"; btnFin.disabled = true; btnFin.style.backgroundColor = "#9e9e9e"; } 
-               else { btnFin.innerText = "🔄 Actualizar Marcador Oficial (Admin)"; btnFin.disabled = false; btnFin.style.backgroundColor = "#d32f2f"; }
-            } else { btnFin.innerText = "🏁 Finalizar Juego y Guardar Pitcher"; btnFin.disabled = false; btnFin.style.backgroundColor = "#d32f2f"; }
+               if (!esPrivilegiado) { btnFin.innerText = "🔒 Juego Finalizado"; btnFin.disabled = true; btnFin.style.backgroundColor = "#9e9e9e"; } 
+               else { btnFin.innerText = "🔄 Actualizar Marcador Oficial"; btnFin.disabled = false; btnFin.style.backgroundColor = "#d32f2f"; }
+            } else { btnFin.innerText = "🏁 Finalizar Juego"; btnFin.disabled = false; btnFin.style.backgroundColor = "#d32f2f"; }
         }
         
         google.script.run.withSuccessHandler(res => {
           if (esInvitado) {
-              document.getElementById('msj-anotador').innerText = "👁️ MODO OBSERVADOR (Solo lectura)";
+              document.getElementById('msj-anotador').innerText = "👁️ MODO OBSERVADOR";
               document.getElementById('msj-anotador').style.color = "#ff9800";
               document.getElementById('msj-anotador').style.fontWeight = "bold";
           } else {
@@ -995,7 +999,7 @@
             }
         }
         
-        let pG = prompt("Confirma o escribe el nombre del Pitcher Ganador para registrarlo en las estadísticas (O déjalo vacío si fue empate/no aplica).", pitcherAuto);
+        let pG = prompt("Confirma o escribe el nombre del Pitcher Ganador).", pitcherAuto);
         if(pG === null) return; 
         
         let msg = `¿Deseas FINALIZAR el juego y subir este resultado oficial?\n\n${infoPartidoActivo.equipoVisita}: ${scores.rV} carreras\n${infoPartidoActivo.equipoLocal}: ${scores.rL} carreras\n\nLas Posiciones se actualizarán automáticamente.`;
@@ -1005,7 +1009,8 @@
         google.script.run.withSuccessHandler(res => {
           btn.innerText = "✅ ¡Juego Finalizado y Stats Actualizadas!"; 
           setTimeout(() => { 
-             if(esAdminGlobal) { btn.innerText = "🔄 Actualizar Marcador Oficial (Admin)"; btn.disabled = false; }
+             let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
+             if(esPrivilegiado) { btn.innerText = "🔄 Actualizar Marcador Oficial"; btn.disabled = false; }
              else { btn.innerText = "🔒 Juego Finalizado"; btn.disabled = true; btn.style.backgroundColor = "#9e9e9e"; }
           }, 3000);
           google.script.run.withSuccessHandler(p => { todosLosPartidos = p || []; mostrarPartidos(todosLosPartidos); }).obtenerProximosPartidos();
