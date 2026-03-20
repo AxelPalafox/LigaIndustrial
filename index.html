@@ -8,22 +8,49 @@
     <style>
       body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
       
-      /* CONFIGURACIÓN DE PANTALLA Y PUBLICIDAD - CORREGIDA Y FORZADA */
-      .layout-global { display: flex; flex-direction: row; justify-content: center; width: 100%; max-width: 1200px; margin: 0 auto; align-items: flex-start; }
+      /* CONFIGURACIÓN MÁXIMA - 3 COLUMNAS RÍGIDAS */
+      .layout-global { 
+          display: flex; 
+          flex-direction: row; 
+          flex-wrap: nowrap !important; /* 🔥 FORZA A QUE NUNCA SE CAIGAN ABAJO */
+          justify-content: space-between; /* 🔥 EMPUJA TOTALMENTE A LAS ORILLAS */
+          width: 100%; 
+          max-width: 1400px; /* 🔥 MUCHO MÁS ANCHO PARA DAR ESPACIO */
+          margin: 0 auto; 
+          align-items: flex-start;
+          padding: 0 15px;
+          box-sizing: border-box;
+      }
       
-      /* flex: 0 0 180px obliga a que los anuncios mantengan su ancho exacto y no se caigan */
-      .panel-lateral { flex: 0 0 180px; margin: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; position: sticky; top: 70px; }
+      .panel-lateral { 
+          flex: 0 0 160px; /* Ancho fijo para las fotos */
+          margin: 15px 0; 
+          display: flex; 
+          flex-direction: column; 
+          align-items: center; 
+          gap: 15px; 
+          position: sticky; 
+          top: 70px; 
+      }
       .img-lateral { width: 100%; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
       
-      .contenedor { padding: 15px; flex: 1 1 auto; max-width: 650px; width: 100%; padding-bottom: 50px; min-width: 0; }
+      .contenedor { 
+          flex: 1 1 auto; 
+          max-width: 700px; 
+          width: 100%; 
+          padding: 15px; 
+          padding-bottom: 50px; 
+          margin: 0 25px; /* Crea una pared invisible para que no choquen */
+          min-width: 0; 
+      }
       
-      /* CELULARES: Ambos anuncios arriba (Izquierda y Derecha) y la App abajo */
-      @media (max-width: 900px) { 
-        .layout-global { flex-direction: column; align-items: center; } 
-        .panel-lateral { flex: auto; position: static; width: 100%; flex-direction: row; justify-content: center; flex-wrap: wrap; margin: 10px 0; padding: 0 10px; box-sizing: border-box; } 
+      /* CELULARES Y TABLETS: */
+      @media (max-width: 950px) { 
+        .layout-global { flex-direction: column !important; align-items: center; justify-content: flex-start; } 
+        .panel-lateral { flex: none; position: static; width: 100%; flex-direction: row; justify-content: center; flex-wrap: wrap; margin: 10px 0; padding: 0; } 
         .panel-lateral p { width: 100%; margin-bottom: 0px !important; }
         .img-lateral { width: 45%; max-width: 180px; height: auto; } 
-        .contenedor { width: 100%; max-width: 100%; flex: none; }
+        .contenedor { margin: 0; width: 100%; }
       }
 
       .nav-bar { display: flex; background: #1a237e; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
