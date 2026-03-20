@@ -8,17 +8,16 @@
     <style>
       body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
       
-      .layout-global { display: flex; justify-content: center; width: 100%; max-width: 1200px; margin: 0 auto; align-items: flex-start;}
-      .panel-lateral { width: 180px; margin: 15px; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 70px; }
+      .layout-global { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: center; width: 100%; max-width: 1200px; margin: 0 auto; align-items: flex-start;}
+      .panel-lateral { width: 180px; margin: 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; position: sticky; top: 70px; }
       .img-lateral { width: 100%; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-      .contenedor { padding: 15px; flex: 1; max-width: 650px; width: 100%; padding-bottom: 50px; }
+      .contenedor { padding: 15px; flex: 1 1 auto; min-width: 0; max-width: 650px; padding-bottom: 50px; }
       
       /* Si es celular, acomoda la publicidad arriba y abajo para no aplastar la app */
       @media (max-width: 900px) { 
-        .layout-global { flex-direction: column; align-items: center; } 
-        .panel-lateral { position: static; width: 100%; flex-direction: row; justify-content: center; flex-wrap: wrap; margin: 10px 0; padding: 0 10px; box-sizing: border-box; } 
-        .panel-lateral p { width: 100%; margin-bottom: 0px !important; }
-        .img-lateral { width: 45%; max-width: 180px; height: auto; }
+        .layout-global { flex-wrap: wrap; } 
+        .panel-lateral { order: 1; position: static; width: 50%; margin: 0; padding: 10px; box-sizing: border-box; } 
+        .contenedor { order: 2; width: 100%; max-width: 100%; flex: none; }
       }
 
       .nav-bar { display: flex; background: #1a237e; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -329,11 +328,12 @@
             </div>
           </div>
         </div>
-        <!--
+        
       <div class="panel-lateral">
          <p style="margin:0; text-align:center; font-size:10px; color:#aaa; letter-spacing:1px;">COLABORADORES</p>
-         <img src="https://drive.google.com/file/d/1fa6MlN5CBhOFhHHaGW0fk6iR87wui-mG/view?usp=drive_link" class="img-lateral">
-      </div>-->
+          <img src="https://i.postimg.cc/PxrdW2GC/Gemini-Generated-Image-p1k8kdp1k8kdp1k8.png" class="img-lateral">
+         <img src="https://i.postimg.cc/3RhLycvY/Whats-App-Image-2026-03-19-at-3-51-42-PM.jpg" class="img-lateral">
+      </div>
 
     </div> <div id="modal-jugada" class="modal">
       <div class="modal-contenido">
