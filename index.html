@@ -440,17 +440,26 @@
       });
 
       function cambiarPantalla(id, boton) {
-        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('activa'); boton.classList.add('active'); 
+        // 1. Oculta todas las pantallas y desactiva los botones
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa')); 
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         
-        // Mostrar anuncios SOLO en la pestaña de juegos
+        // 2. Muestra la pantalla solicitada y activa su botón
+        document.getElementById(id).classList.add('activa'); 
+        boton.classList.add('active'); 
+        
+        // 🔥 3. CONTROL INTELIGENTE DE PUBLICIDAD 🔥
         let banners = document.querySelectorAll('.panel-lateral');
-        if(id === 'pantalla-inicio') {
-           banners.forEach(b => b.style.display = '');
-        } else {
+        
+        // Si entramos al Anotador o al Acceso, ocultamos los banners
+        if(id === 'pantalla-anotador' || id === 'pantalla-acceso') {
            banners.forEach(b => b.style.display = 'none');
+        } else {
+           // En cualquier otra pestaña, los volvemos a mostrar
+           banners.forEach(b => b.style.display = 'flex');
         }
 
+        // Cargar datos extras si es necesario
         if(id === 'pantalla-anotador') llenarSelectorAnotador();
         if(id === 'pantalla-estadisticas') cargarEstadisticas();
       }
