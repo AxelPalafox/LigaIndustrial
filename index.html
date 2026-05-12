@@ -189,7 +189,7 @@
       <button class="nav-btn active" onclick="cambiarPantalla('pantalla-inicio', this)">🏟️ Juegos</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-posiciones', this)">🏆 Standing</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-estadisticas', this)">📊 Stats</button>
-      <button class="nav-btn" onclick="cambiarPantalla('plantillas', this); prepararSelectorPlantillas();">👥 Plantillas</button>
+      <button class="nav-btn" onclick="cambiarPantalla('pantalla-plantillas', this); prepararSelectorPlantillas();">👥 Plantillas</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-anotador', this)">📝 Anotar</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-acceso', this)">⚙️ Acceso</button>
     </div>
@@ -1170,22 +1170,34 @@
         }).guardarScorebookEnExcel(infoPartidoActivo.info, equipoAnotandoReal, datosAEnviar, rosterAEnviar);
       }
       // 1. Llena el selector de equipos cuando entras a la pestaña
-function prepararSelectorPlantillas() {
-  const select = document.getElementById('select-equipo-plantilla');
-  select.innerHTML = '<option value="">Selecciona un equipo...</option>';
+// Función CORREGIDA para extraer solo los Equipos (sin duplicados y sin jugadores)
+      function prepararSelectorPlantillas() {
+        const select = document.getElementById('select-equipo-plantilla');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Selecciona un equipo...</option>';
 
-  // Usamos la función que ya tienes en el Servidor (Apps Script)
-  google.script.run.withSuccessHandler(equipos => {
-    equipos.forEach(eq => {
-      // eq[0] suele ser el nombre del equipo según tu estructura
-      let nombre = Array.isArray(eq) ? eq[0] : eq; 
-      let option = document.createElement('option');
-      option.value = nombre;
-      option.text = nombre;
-      select.appendChild(option);
-    });
-  }).obtenerEquipos();
-}
+        google.script.run.withSuccessHandler(equipos => {
+          let unicos = [];
+          
+          // En tu base de datos, el equipo está en la posición [1]
+          equipos.forEach(eq => { 
+              let nombreEquipo = eq[1];
+              if(nombreEquipo && !unicos.includes(nombreEquipo) && nombreEquipo !== "AGENCIA LIBRE") {
+                  unicos.push(nombreEquipo); 
+              }
+          });
+          
+          // Los ordenamos alfabéticamente y los metemos al menú
+          unicos.sort().forEach(nombre => {
+              let option = document.createElement('option');
+              option.value = nombre;
+              option.text = nombre;
+              select.appendChild(option);
+          });
+          
+        }).obtenerEquipos();
+      }
 
 // 2. Trae los jugadores y los muestra en una tabla limpia
 function mostrarJugadoresPlantilla() {
