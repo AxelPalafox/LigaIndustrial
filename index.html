@@ -189,6 +189,7 @@
       <button class="nav-btn active" onclick="cambiarPantalla('pantalla-inicio', this)">🏟️ Juegos</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-posiciones', this)">🏆 Standing</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-estadisticas', this)">📊 Stats</button>
+      <button class="nav-btn" onclick="cambiarPantalla('plantillas', this); prepararSelectorPlantillas();">👥 Plantillas</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-anotador', this)">📝 Anotar</button>
       <button class="nav-btn" onclick="cambiarPantalla('pantalla-acceso', this)">⚙️ Acceso</button>
     </div>
@@ -237,6 +238,20 @@
              </div>
           </div>
         </div>
+
+        <div id="pantalla-plantillas" class="pantalla">
+  <div class="card-moderna">
+    <h2 style="margin-bottom:10px; color:#1a237e;">Plantillas Oficiales</h2>
+    <p style="font-size:13px; color:#666; margin-bottom:20px;">Selecciona un equipo para ver su lista de jugadores inscritos.</p>
+    
+    <select id="select-equipo-plantilla" onchange="mostrarJugadoresPlantilla()" class="input-moderno" style="width:100%; max-width:300px;">
+      <option value="">Cargando equipos...</option>
+    </select>
+
+    <div id="lista-jugadores-plantilla" style="margin-top:25px;">
+      </div>
+  </div>
+</div>
 
         <div id="pantalla-acceso" class="pantalla">
           <div id="login-seccion" style="background:white; padding:25px; border-radius:12px; border:1px solid #eee;">
@@ -1154,6 +1169,65 @@
           else { toast.innerText = "❌ Error al guardar en Excel"; toast.style.backgroundColor = "#d32f2f"; setTimeout(() => { toast.style.display = 'none'; toast.innerText = "💾 Guardado en Excel"; toast.style.backgroundColor = "#2e7d32"; }, 3000); }
         }).guardarScorebookEnExcel(infoPartidoActivo.info, equipoAnotandoReal, datosAEnviar, rosterAEnviar);
       }
+      // 1. Llena el selector de equipos cuando entras a la pestaña
+function prepararSelectorPlantillas() {
+  const select = document.getElementById('select-equipo-plantilla');
+  select.innerHTML = '<option value="">Selecciona un equipo...</option>';
+
+  // Usamos la función que ya tienes en el Servidor (Apps Script)
+  google.script.run.withSuccessHandler(equipos => {
+    equipos.forEach(eq => {
+      // eq[0] suele ser el nombre del equipo según tu estructura
+      let nombre = Array.isArray(eq) ? eq[0] : eq; 
+      let option = document.createElement('option');
+      option.value = nombre;
+      option.text = nombre;
+      select.appendChild(option);
+    });
+  }).obtenerEquipos();
+}
+
+// 2. Trae los jugadores y los muestra en una tabla limpia
+function mostrarJugadoresPlantilla() {
+  const equipo = document.getElementById('select-equipo-plantilla').value;
+  const contenedor = document.getElementById('lista-jugadores-plantilla');
+
+  if (!equipo) {
+    contenedor.innerHTML = "";
+    return;
+  }
+
+  contenedor.innerHTML = '<p style="text-align:center; color:#999;">Consultando lista...</p>';
+
+  // Usamos la función del servidor que trae el roster
+  google.script.run.withSuccessHandler(jugadores => {
+    if (!jugadores || jugadores.length === 0) {
+      contenedor.innerHTML = "<p style='text-align:center; color:red;'>No hay jugadores registrados en este equipo.</p>";
+      return;
+    }
+
+    let html = `
+      <table style="width:100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <thead style="background: #f1f3f4; color: #5f6368; font-size: 12px; text-transform: uppercase;">
+          <tr>
+            <th style="padding: 12px; text-align: left; width: 40px;">#</th>
+            <th style="padding: 12px; text-align: left;">Nombre del Jugador</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    jugadores.forEach((jugador, i) => {
+      html += `
+        <tr style="border-bottom: 1px solid #f1f1f1;">
+          <td style="padding: 10px; color: #aaa; font-weight: bold;">${i + 1}</td>
+          <td style="padding: 10px; font-weight: 500;">${jugador}</td>
+        </tr>`;
+    });
+
+    html += "</tbody></table>";
+    contenedor.innerHTML = html;
+  }).obtenerRosterParaLineup(equipo);
+}
     </script>
   </body>
 </html>
