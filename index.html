@@ -1170,7 +1170,7 @@
         }).guardarScorebookEnExcel(infoPartidoActivo.info, equipoAnotandoReal, datosAEnviar, rosterAEnviar);
       }
       // 1. Llena el selector de equipos cuando entras a la pestaña
-// Función CORREGIDA para extraer solo los Equipos (sin duplicados y sin jugadores)
+// Función para extraer Equipos + Opción de Draft
       function prepararSelectorPlantillas() {
         const select = document.getElementById('select-equipo-plantilla');
         if (!select) return;
@@ -1180,15 +1180,23 @@
         google.script.run.withSuccessHandler(equipos => {
           let unicos = [];
           
-          // En tu base de datos, el equipo está en la posición [1]
+          // Filtramos los equipos reales
           equipos.forEach(eq => { 
               let nombreEquipo = eq[1];
+              // Ignoramos los vacíos y la "AGENCIA LIBRE" para la lista normal
               if(nombreEquipo && !unicos.includes(nombreEquipo) && nombreEquipo !== "AGENCIA LIBRE") {
                   unicos.push(nombreEquipo); 
               }
           });
           
-          // Los ordenamos alfabéticamente y los metemos al menú
+          // 1. AGREGAMOS EL DRAFT COMO PRIMERA OPCIÓN ESTRELLA
+          let draftOption = document.createElement('option');
+          draftOption.value = "AGENCIA LIBRE"; // Debe coincidir con lo que dice en tu Excel
+          draftOption.text = "🔥 DRAFT / AGENCIA LIBRE";
+          draftOption.style.fontWeight = "bold";
+          select.appendChild(draftOption);
+
+          // 2. AGREGAMOS EL RESTO DE LOS EQUIPOS
           unicos.sort().forEach(nombre => {
               let option = document.createElement('option');
               option.value = nombre;
