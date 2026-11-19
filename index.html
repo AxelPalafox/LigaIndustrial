@@ -1421,6 +1421,8 @@ function mostrarJugadoresPlantilla() {
       confirmButtonColor: '#3085d6'
     });
 
+  }).withFailureHandler(error => {
+      Swal.fire('Error', 'Ocurrió un error en el servidor: ' + error.message, 'error');
   }).buscarHistorialJugadorGS(nombreJugador);
 }
     </script>
