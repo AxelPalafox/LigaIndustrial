@@ -1502,23 +1502,15 @@ function verCredencial(nombreJugador) {
   }).buscarHistorialJugadorGS(nombreJugador);
 }
 
-// ----------------------------------------------------
-// FUNCIÓN NUEVA: Lee el archivo y lo envía al servidor
-// ----------------------------------------------------
 function procesarFoto(nombreJugador) {
     const input = document.getElementById('inputFoto');
     const file = input.files[0];
     if (!file) return;
-
-    // Efecto visual mientras carga
-    document.getElementById('fotoCredencial').style.opacity = '0.5';
-    Swal.fire({
-        title: 'Subiendo foto...',
-        text: 'Espera un momento',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading() }
-    });
-
+    const fotoImg = document.getElementById('fotoCredencial');
+    const labelBtn = document.querySelector('label[for="inputFoto"]');
+    const textoOriginal = labelBtn ? labelBtn.innerHTML : '📷 Cambiar Foto';
+    if (fotoImg) fotoImg.style.opacity = '0.5';
+    if (labelBtn) labelBtn.innerHTML = '⏳ Subiendo...';
     const reader = new FileReader();
     reader.onloadend = function() {
         const base64data = reader.result;
@@ -1526,11 +1518,12 @@ function procesarFoto(nombreJugador) {
 
         google.script.run.withSuccessHandler(res => {
             if(res && !res.toString().includes("ERROR")) {
-                // Actualiza la imagen en vivo sin recargar la página
-                document.getElementById('fotoCredencial').src = res;
-                document.getElementById('fotoCredencial').style.opacity = '1';
-                
-                // Cierra el Swal de carga y lanza un pequeño aviso de éxito arriba a la derecha
+                if (fotoImg) {
+                    fotoImg.src = res;
+                    fotoImg.style.opacity = '1';
+                }
+                if (labelBtn) labelBtn.innerHTML = textoOriginal;
+ 
                 Swal.fire({
                     icon: 'success', 
                     title: 'Foto actualizada', 
@@ -1541,11 +1534,13 @@ function procesarFoto(nombreJugador) {
                 });
             } else {
                 Swal.fire('Error', 'No se pudo subir la foto: ' + res, 'error');
-                document.getElementById('fotoCredencial').style.opacity = '1';
+                if (fotoImg) fotoImg.style.opacity = '1';
+                if (labelBtn) labelBtn.innerHTML = textoOriginal;
             }
         }).withFailureHandler(err => {
             Swal.fire('Error', 'Falla de conexión al subir foto.', 'error');
-            document.getElementById('fotoCredencial').style.opacity = '1';
+            if (fotoImg) fotoImg.style.opacity = '1';
+            if (labelBtn) labelBtn.innerHTML = textoOriginal;
         }).subirFotoJugadorGS(nombreJugador, base64data, mimeType);
     };
     
