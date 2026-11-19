@@ -629,49 +629,65 @@
       function prepararPanelEquipo(nombre) {
         lineupSeleccionado = []; ordenJugadoresClic = []; actualizarPizarraLineup(); 
         
-        let esAnotador = (nombre.toUpperCase() === "ANOTADOR");
-        let esPrivilegiado = esAdminGlobal || esAnotador; // Otorga superpoderes de Lineup
-        
-        // El panel de administrador (crear juegos, equipos) SOLO lo ve el Admin real
         if (esAdminGlobal) { 
           document.getElementById('panel-admin-partidos').style.display = 'block'; 
+          document.getElementById('contenedor-admin-equipo').style.display = 'block'; 
           document.getElementById('panel-admin-rosters').style.display = 'block'; 
           document.getElementById('panel-admin-equipos').style.display = 'block'; 
           inicializarAdminPartidos();
           
           google.script.run.withSuccessHandler(equipos => {
-            let selR = document.getElementById('admin-roster-equipo'); let selDel = document.getElementById('baja-eq-sel');
-            selR.innerHTML = '<option value="">Selecciona un equipo a editar...</option>'; selDel.innerHTML = '<option value="">Selecciona equipo a eliminar...</option>';
-            let unicos = []; equipos.forEach(e => { if(!unicos.includes(e[1]) && e[1] !== "AGENCIA LIBRE") unicos.push(e[1]); }); 
-            unicos.filter(e => e).sort().forEach(e => { selR.innerHTML += `<option value="${e}">${e}</option>`; selDel.innerHTML += `<option value="${e}">${e}</option>`; });
-          }).obtenerEquipos();
-        } else {
-          document.getElementById('panel-admin-partidos').style.display = 'none'; 
-          document.getElementById('panel-admin-rosters').style.display = 'none'; 
-          document.getElementById('panel-admin-equipos').style.display = 'none';
-        }
-
-        // El panel de Elegir Equipo para el Lineup lo ven el Admin Y el Anotador
-        if (esPrivilegiado) {
-          document.getElementById('contenedor-admin-equipo').style.display = 'block';
-          google.script.run.withSuccessHandler(equipos => {
-            let selE = document.getElementById('admin-select-equipo');
+            let selE = document.getElementById('admin-select-equipo'); 
+            let selR = document.getElementById('admin-roster-equipo'); 
+            let selDel = document.getElementById('baja-eq-sel');
+            
             selE.innerHTML = '<option value="">Selecciona equipo...</option>'; 
-            let unicos = []; equipos.forEach(e => { if(!unicos.includes(e[1]) && e[1] !== "AGENCIA LIBRE") unicos.push(e[1]); }); 
-            unicos.filter(e => e).sort().forEach(e => { selE.innerHTML += `<option value="${e}">${e}</option>`; });
+            selR.innerHTML = '<option value="">Selecciona un equipo a editar...</option>'; 
+            selDel.innerHTML = '<option value="">Selecciona equipo a eliminar...</option>';
+            
+            let unicos = []; 
+            
+            // 1. Extraemos solo los equipos reales (ignoramos los Drafts aquí)
+            equipos.forEach(e => { 
+                let nombreEquipo = e[1];
+                if(nombreEquipo && !unicos.includes(nombreEquipo) && !nombreEquipo.includes("AGENCIA LIBRE")) {
+                    unicos.push(nombreEquipo); 
+                } 
+            }); 
+            
+            // 2. Insertamos los Drafts manualmente (Solo para Ver y Editar, NO para Eliminar)
+            let opcionesDraft = `
+              <option value="AGENCIA LIBRE A">🔥 DRAFT - CATEGORÍA A</option>
+              <option value="AGENCIA LIBRE B">🔥 DRAFT - CATEGORÍA B</option>
+            `;
+            selE.innerHTML += opcionesDraft;
+            selR.innerHTML += opcionesDraft;
+
+            // 3. Insertamos el resto de equipos alfabéticamente en los 3 menús
+            unicos.sort().forEach(e => { 
+                let opt = `<option value="${e}">${e}</option>`;
+                selE.innerHTML += opt; 
+                selR.innerHTML += opt; 
+                selDel.innerHTML += opt; 
+            });
+            
           }).obtenerEquipos();
           document.getElementById('contenedor-jugadores-lineup').innerHTML = '<p style="color:#888; grid-column:span 2; text-align:center;">Elige equipo arriba.</p>';
         } else {
-          document.getElementById('contenedor-admin-equipo').style.display = 'none';
+          document.getElementById('panel-admin-partidos').style.display = 'none'; 
+          document.getElementById('contenedor-admin-equipo').style.display = 'none'; 
+          document.getElementById('panel-admin-rosters').style.display = 'none'; 
+          document.getElementById('panel-admin-equipos').style.display = 'none';
           document.getElementById('contenedor-jugadores-lineup').innerHTML = '<p style="grid-column:span 2; text-align:center;">Cargando jugadores...</p>';
           cargarCheckboxesRoster(nombre);
         }
 
         let jUnicas = []; todosLosPartidos.forEach(p => { 
-            if (esPrivilegiado || p[3]===nombre || p[4]===nombre) {
+            if (esAdminGlobal || p[3]===nombre || p[4]===nombre) {
                 let j = p[6]?p[6].trim():""; if(j!=="" && !jUnicas.includes(j)) jUnicas.push(j); 
             }
         });
+        
         jUnicas.sort((a, b) => { let numA = parseInt(a.replace(/\D/g, '')); let numB = parseInt(b.replace(/\D/g, '')); if(!isNaN(numA) && !isNaN(numB)) return numA - numB; if(!isNaN(numA)) return -1; if(!isNaN(numB)) return 1; return a.localeCompare(b); });
         
         let selJ = document.getElementById('lineup-jornada-selector');
