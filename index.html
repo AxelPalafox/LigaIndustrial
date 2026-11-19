@@ -1422,7 +1422,7 @@ function mostrarJugadoresPlantilla() {
     });
 
   }).withFailureHandler(error => {
-      Swal.fire('Error', 'Ocurrió un error en el servidor: ' + error.message, 'error');
+      Swal.fire('Error', 'Falla en el servidor: ' + error, 'error');
   }).buscarHistorialJugadorGS(nombreJugador);
 }
     </script>
