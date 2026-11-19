@@ -804,14 +804,30 @@
       }
 
       function agregarJugador() {
-        let eq = document.getElementById('admin-roster-equipo').value; let nombre = document.getElementById('input-nuevo-jugador').value.trim();
-        if(!eq || !nombre) { alert("Escribe un nombre de jugador"); return; } document.getElementById('input-nuevo-jugador').value = 'Guardando...';
-        google.script.run.withSuccessHandler(res => {
-          document.getElementById('input-nuevo-jugador').value = '';
-          if(res === "RECHAZADO_ES_DE_A") alert("❌ ACCIÓN RECHAZADA:\nEste jugador ya pertenece a la Categoría A y no puede ser dado de alta en un equipo de Categoría B.");
-          else if (res === "OK") cargarRosterEdicion(); else alert("Ocurrió un error al guardar.");
-        }).agregarJugadorGS(eq, nombre);
-      }
+  let eq = document.getElementById('admin-roster-equipo').value; 
+  let nombre = document.getElementById('input-nuevo-jugador').value.trim();
+  
+  if(!eq || !nombre) { alert("Escribe un nombre de jugador"); return; } 
+  document.getElementById('input-nuevo-jugador').value = 'Guardando...';
+  
+  google.script.run.withSuccessHandler(res => {
+    document.getElementById('input-nuevo-jugador').value = '';
+    
+    // Aquí detectamos si incluye la palabra de rechazo y sacamos el equipo
+    if(res && res.toString().includes("RECHAZADO_ES_DE_A")) {
+      let partes = res.split("|"); 
+      let equipoOriginal = partes[1] || "Categoría A";
+      
+      alert(`❌ ACCIÓN RECHAZADA:\nEste jugador ya pertenece a la Categoría A.\n\nActualmente juega para: ${equipoOriginal}\n\nPor reglas de la liga, no puede ser dado de alta en un equipo de Categoría B.`);
+    }
+    else if (res === "OK") {
+      cargarRosterEdicion(); 
+    } 
+    else {
+      alert("Ocurrió un error al guardar.");
+    }
+  }).agregarJugadorGS(eq, nombre);
+}
 
       function bajaJugador(nombre) {
         let eq = document.getElementById('admin-roster-equipo').value; if(!confirm(`¿Seguro que deseas dar de baja a ${nombre} del equipo ${eq}?`)) return;
