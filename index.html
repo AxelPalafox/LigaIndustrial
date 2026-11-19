@@ -125,7 +125,7 @@
   <body>
 
     <script>
-      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwxuyGIq6GB1k4fW0P71_VsZVtr0tzhrSZ-rtVefrXTz3HVTp06Ra1fT24_nVccA3hx/exec";
+      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzB2qu2KFRbdI1MyKUFMeRDK8tUHJ--4gvy5TKlaoqKZbpaX9AUkP7oeM4TlL2VO-YX/exec";
 
       const google = {
         script: {
@@ -852,6 +852,42 @@
         cargarCheckboxesRoster(equipoElegido);
       }
 
+      function procesarFoto(nombreJugador) {
+    const input = document.getElementById('inputFoto');
+    const file = input.files[0];
+    if (!file) return;
+
+    // Ponemos la foto opaca y mostramos que está cargando
+    document.getElementById('fotoCredencial').style.opacity = '0.5';
+    Swal.showLoading();
+
+    const reader = new FileReader();
+    reader.onloadend = function() {
+        const base64data = reader.result;
+        const mimeType = file.type;
+
+        // Enviamos la foto a Google Apps Script usando tu mismo método
+        google.script.run.withSuccessHandler(res => {
+            if(res && !res.toString().includes("ERROR")) {
+                // Si todo sale bien, actualizamos la imagen en la credencial
+                document.getElementById('fotoCredencial').src = res;
+                document.getElementById('fotoCredencial').style.opacity = '1';
+                Swal.hideLoading();
+                Swal.fire({icon: 'success', title: 'Foto guardada', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000});
+            } else {
+                Swal.fire('Error', 'No se pudo subir la foto: ' + res, 'error');
+                document.getElementById('fotoCredencial').style.opacity = '1';
+            }
+        }).withFailureHandler(err => {
+            Swal.fire('Error', 'Falla de conexión al subir foto.', 'error');
+            document.getElementById('fotoCredencial').style.opacity = '1';
+        }).subirFotoJugadorGS(nombreJugador, base64data, mimeType);
+    };
+    
+    // Leemos el archivo
+    reader.readAsDataURL(file);
+}
+
       function cargarCheckboxesRoster(eq) {
         google.script.run.withSuccessHandler(j => {
           var html = ''; 
@@ -1334,17 +1370,38 @@ function mostrarJugadoresPlantilla() {
         }
         tablaHTML += `</tbody></table></div>`;
 
+        // 1. LÓGICA DE FOTO Y BOTÓN
+        // Si no trae foto de la base de datos, ponemos una silueta genérica
+        let urlFoto = datos.fotoUrl ? datos.fotoUrl : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+        let botonSubirFoto = "";
+
+        // Validamos si es admin global o manager del mismo equipo
+        if (typeof esAdminGlobal !== 'undefined' && typeof equipoActivoGlobal !== 'undefined') {
+            if (esAdminGlobal || (equipoActivoGlobal !== "" && equipoActivoGlobal === datos.equipoActual)) {
+                botonSubirFoto = `
+                    <div style="margin-top: 10px; margin-bottom: 5px;">
+                        <label for="inputFoto" style="cursor:pointer; background:#0284c7; color:white; padding:6px 12px; border-radius:5px; font-size:12px; font-weight:bold; display:inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            📷 Cambiar Foto
+                        </label>
+                        <input type="file" id="inputFoto" accept="image/*" style="display:none;" onchange="procesarFoto('${datos.nombre}')">
+                    </div>
+                `;
+            }
+        }
+
         Swal.fire({
           title: 'Credencial Virtual',
           width: '600px',
           html: `
             <div style="display: flex; flex-direction: column; align-items: center;">
-              <!-- Icono de jugador -->
-              <div style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-                <svg width="40" height="40" fill="#64748b" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              </div>
               
-              <h2 style="margin: 0; color: #1e293b;">${datos.nombre}</h2>
+              <!-- Foto del Jugador -->
+              <img id="fotoCredencial" src="${urlFoto}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 5px;">
+              
+              <!-- Botón de subir foto (solo visible si tiene permisos) -->
+              ${botonSubirFoto}
+
+              <h2 style="margin: 5px 0 0 0; color: #1e293b;">${datos.nombre}</h2>
               <p style="margin: 5px 0 15px 0; font-size: 16px; color: #475569;">
                 <b>Equipo Actual:</b> <span style="color: #0284c7;">${datos.equipoActual}</span><br>
                 <b>Estatus:</b> <span style="background: #fef08a; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #854d0e;">${datos.categoriaActual}</span>
@@ -1364,7 +1421,8 @@ function mostrarJugadoresPlantilla() {
     }
   });
 }
-      function verCredencial(nombreJugador) {
+
+function verCredencial(nombreJugador) {
   Swal.fire({
     title: 'Cargando...',
     html: 'Buscando la ficha de <b>' + nombreJugador + '</b>',
@@ -1398,15 +1456,33 @@ function mostrarJugadoresPlantilla() {
     }
     tablaHTML += `</tbody></table></div>`;
 
+    // 1. LÓGICA DE FOTO Y BOTÓN (Igual que arriba)
+    let urlFoto = datos.fotoUrl ? datos.fotoUrl : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+    let botonSubirFoto = "";
+
+    if (typeof esAdminGlobal !== 'undefined' && typeof equipoActivoGlobal !== 'undefined') {
+        if (esAdminGlobal || (equipoActivoGlobal !== "" && equipoActivoGlobal === datos.equipoActual)) {
+            botonSubirFoto = `
+                <div style="margin-top: 10px; margin-bottom: 5px;">
+                    <label for="inputFoto" style="cursor:pointer; background:#0284c7; color:white; padding:6px 12px; border-radius:5px; font-size:12px; font-weight:bold; display:inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                        📷 Cambiar Foto
+                    </label>
+                    <input type="file" id="inputFoto" accept="image/*" style="display:none;" onchange="procesarFoto('${datos.nombre}')">
+                </div>
+            `;
+        }
+    }
+
     Swal.fire({
       title: 'Credencial Virtual',
       width: '600px',
       html: `
         <div style="display: flex; flex-direction: column; align-items: center;">
-          <div style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <svg width="40" height="40" fill="#64748b" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          </div>
-          <h2 style="margin: 0; color: #1e293b;">${datos.nombre}</h2>
+          
+          <img id="fotoCredencial" src="${urlFoto}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 5px;">
+          ${botonSubirFoto}
+
+          <h2 style="margin: 5px 0 0 0; color: #1e293b;">${datos.nombre}</h2>
           <p style="margin: 5px 0 15px 0; font-size: 16px; color: #475569;">
             <b>Equipo Actual:</b> <span style="color: #0284c7;">${datos.equipoActual}</span><br>
             <b>Estatus:</b> <span style="background: #fef08a; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #854d0e;">${datos.categoriaActual}</span>
@@ -1424,6 +1500,56 @@ function mostrarJugadoresPlantilla() {
   }).withFailureHandler(error => {
       Swal.fire('Error', 'Falla en el servidor: ' + error, 'error');
   }).buscarHistorialJugadorGS(nombreJugador);
+}
+
+// ----------------------------------------------------
+// FUNCIÓN NUEVA: Lee el archivo y lo envía al servidor
+// ----------------------------------------------------
+function procesarFoto(nombreJugador) {
+    const input = document.getElementById('inputFoto');
+    const file = input.files[0];
+    if (!file) return;
+
+    // Efecto visual mientras carga
+    document.getElementById('fotoCredencial').style.opacity = '0.5';
+    Swal.fire({
+        title: 'Subiendo foto...',
+        text: 'Espera un momento',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading() }
+    });
+
+    const reader = new FileReader();
+    reader.onloadend = function() {
+        const base64data = reader.result;
+        const mimeType = file.type;
+
+        google.script.run.withSuccessHandler(res => {
+            if(res && !res.toString().includes("ERROR")) {
+                // Actualiza la imagen en vivo sin recargar la página
+                document.getElementById('fotoCredencial').src = res;
+                document.getElementById('fotoCredencial').style.opacity = '1';
+                
+                // Cierra el Swal de carga y lanza un pequeño aviso de éxito arriba a la derecha
+                Swal.fire({
+                    icon: 'success', 
+                    title: 'Foto actualizada', 
+                    toast: true, 
+                    position: 'top-end', 
+                    showConfirmButton: false, 
+                    timer: 3000
+                });
+            } else {
+                Swal.fire('Error', 'No se pudo subir la foto: ' + res, 'error');
+                document.getElementById('fotoCredencial').style.opacity = '1';
+            }
+        }).withFailureHandler(err => {
+            Swal.fire('Error', 'Falla de conexión al subir foto.', 'error');
+            document.getElementById('fotoCredencial').style.opacity = '1';
+        }).subirFotoJugadorGS(nombreJugador, base64data, mimeType);
+    };
+    
+    reader.readAsDataURL(file);
 }
     </script>
   </body>
