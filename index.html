@@ -122,6 +122,7 @@
       .modal-acciones { display: flex; gap: 10px; margin-top: 15px; }
       .guardando-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #2e7d32; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; display: none; z-index: 2000; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
   <body>
 
@@ -137,7 +138,7 @@
               const executor = async function(action, args) {
                 try {
                   if(GOOGLE_APP_SCRIPT_URL === "https://script.google.com/macros/s/TU_CODIGO_AQUI/exec") {
-                    alert("⚠️ ERROR: Aún no pegas la URL de Google Apps Script en el código HTML.");
+                    Swal.firet("⚠️ ERROR: Aún no pegas la URL de Google Apps Script en el código HTML.");
                     return;
                   }
                   
@@ -150,7 +151,7 @@
                   
                   let text = await response.text();
                   if(text.includes("<!DOCTYPE html>")) {
-                    alert("⚠️ Error");
+                    Swal.fire("⚠️ Error");
                     return;
                   }
 
@@ -759,7 +760,7 @@
 
       function guardarCambiosPartido() {
         let fila = document.getElementById('admin-selector-edicion').value; let datos = [ document.getElementById('form-fecha').value, document.getElementById('form-hora').value, document.getElementById('form-cat').value, document.getElementById('form-loc').value, document.getElementById('form-vis').value, document.getElementById('form-campo').value, document.getElementById('form-jor').value, document.getElementById('form-score-loc').value, document.getElementById('form-score-vis').value, fila ];
-        if(!datos[3] || !datos[4]) { alert("Selecciona Equipo Local y Visitante."); return; }
+        if(!datos[3] || !datos[4]) { Swal.firet("Selecciona Equipo Local y Visitante."); return; }
         let btn = document.getElementById('btn-guardar-partido'); btn.innerText = "Guardando..."; btn.disabled = true;
         google.script.run.withSuccessHandler(res => {
           btn.innerText = "✅ Guardado"; btn.disabled = false; setTimeout(() => { btn.innerText = "💾 Guardar"; }, 2000);
@@ -780,18 +781,18 @@
 
       function crearEquipoBase() {
         let cat = document.getElementById('alta-eq-cat').value; let nombre = document.getElementById('alta-eq-nombre').value.trim(); let jugStr = document.getElementById('alta-eq-jugadores').value.trim();
-        if(!nombre) { alert("Ponle un nombre al equipo"); return; } let jugadores = jugStr.split('\n').filter(j => j.trim() !== "");
+        if(!nombre) { Swal.fire("Ponle un nombre al equipo"); return; } let jugadores = jugStr.split('\n').filter(j => j.trim() !== "");
         let btn = document.getElementById('btn-crear-eq'); btn.innerText = "Creando..."; btn.disabled = true;
         google.script.run.withSuccessHandler(res => {
            btn.innerText = "✨ Crear Equipo con Jugadores"; btn.disabled = false;
-           if(res === "OK") { alert("Equipo Creado"); document.getElementById('alta-eq-nombre').value = ""; document.getElementById('alta-eq-jugadores').value = ""; prepararPanelEquipo("ADMIN"); }
+           if(res === "OK") { Swal.fire("Equipo Creado"); document.getElementById('alta-eq-nombre').value = ""; document.getElementById('alta-eq-jugadores').value = ""; prepararPanelEquipo("ADMIN"); }
         }).altaEquipoGS(cat, nombre, jugadores);
       }
 
       function eliminarEquipoBase() {
         let eq = document.getElementById('baja-eq-sel').value; if(!eq) return; if(!confirm(`¿Seguro de eliminar al equipo ${eq}?`)) return;
         let btn = document.getElementById('btn-eliminar-eq'); btn.innerText = "Eliminando..."; btn.disabled = true;
-        google.script.run.withSuccessHandler(res => { btn.innerText = "🗑️ Eliminar Franquicia"; btn.disabled = false; if(res === "OK") { alert("Equipo eliminado"); prepararPanelEquipo("ADMIN"); } }).bajaEquipoGS(eq);
+        google.script.run.withSuccessHandler(res => { btn.innerText = "🗑️ Eliminar Franquicia"; btn.disabled = false; if(res === "OK") { Swal.fire("Equipo eliminado"); prepararPanelEquipo("ADMIN"); } }).bajaEquipoGS(eq);
       }
 
       function cargarRosterEdicion() {
@@ -807,31 +808,54 @@
   let eq = document.getElementById('admin-roster-equipo').value; 
   let nombre = document.getElementById('input-nuevo-jugador').value.trim();
   
-  if(!eq || !nombre) { alert("Escribe un nombre de jugador"); return; } 
+  if(!eq || !nombre) { 
+    Swal.fire('Atención', 'Selecciona un equipo y escribe el nombre del jugador.', 'warning'); 
+    return; 
+  } 
+  
   document.getElementById('input-nuevo-jugador').value = 'Guardando...';
   
   google.script.run.withSuccessHandler(res => {
     document.getElementById('input-nuevo-jugador').value = '';
     
-    // Aquí detectamos si incluye la palabra de rechazo y sacamos el equipo
-    if(res && res.toString().includes("RECHAZADO_ES_DE_A")) {
+    if(res && res.toString().includes("RECHAZADO_LIMITE_A")) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Límite alcanzado',
+        text: 'Este equipo de la Categoría B ya tiene 2 jugadores de la Categoría A. No se permiten más refuerzos.',
+        confirmButtonColor: '#d33'
+      });
+    }
+    else if (res && res.toString().includes("OK_REFUERZO")) {
       let partes = res.split("|"); 
       let equipoOriginal = partes[1] || "Categoría A";
-      
-      alert(`❌ ACCIÓN RECHAZADA:\nEste jugador ya pertenece a la Categoría A.\n\nActualmente juega para: ${equipoOriginal}\n\nPor reglas de la liga, no puede ser dado de alta en un equipo de Categoría B.`);
+      Swal.fire({
+        icon: 'info',
+        title: 'Refuerzo de Cat A Agregado',
+        html: `El jugador se agregó correctamente con la etiqueta <b>(Cat A)</b>.<br><br>Sigue perteneciendo a <b>${equipoOriginal}</b>.`,
+        confirmButtonColor: '#3085d6'
+      });
+      cargarRosterEdicion();
     }
     else if (res === "OK") {
+      Swal.fire({
+        icon: 'success',
+        title: '¡Guardado!',
+        text: 'Jugador registrado correctamente.',
+        showConfirmButton: false,
+        timer: 1500
+      });
       cargarRosterEdicion(); 
     } 
     else {
-      alert("Ocurrió un error al guardar.");
+      Swal.fire('Error', 'Ocurrió un error al guardar.', 'error');
     }
   }).agregarJugadorGS(eq, nombre);
 }
 
       function bajaJugador(nombre) {
         let eq = document.getElementById('admin-roster-equipo').value; if(!confirm(`¿Seguro que deseas dar de baja a ${nombre} del equipo ${eq}?`)) return;
-        google.script.run.withSuccessHandler(res => { if(res === "OK") cargarRosterEdicion(); else alert("No se pudo dar de baja."); }).eliminarJugadorGS(eq, nombre);
+        google.script.run.withSuccessHandler(res => { if(res === "OK") cargarRosterEdicion(); else Swal.fire("No se pudo dar de baja."); }).eliminarJugadorGS(eq, nombre);
       }
 
       function cargarJugadoresAdmin() {
@@ -968,10 +992,10 @@
         let esPrivilegiado = esAdminGlobal || equipoActivoGlobal.toUpperCase() === "ANOTADOR";
         let eqBuscado = esPrivilegiado ? document.getElementById('admin-select-equipo').value : equipoActivoGlobal;
 
-        if(esPrivilegiado) { if(eqBuscado === "") { alert("Selecciona a qué equipo le estás registrando el lineup arriba en el menú de ADMIN/ANOTADOR."); return; } }
-        if(partido === "") { alert("Selecciona un partido primero."); return; }
+        if(esPrivilegiado) { if(eqBuscado === "") { Swal.fire("Selecciona a qué equipo le estás registrando el lineup arriba en el menú de ADMIN/ANOTADOR."); return; } }
+        if(partido === "") { Swal.fire("Selecciona un partido primero."); return; }
         if(lineupSeleccionado.length === 0) { if(!confirm("⚠️ Estás a punto de guardar un roster VACÍO. Esto borrará el lineup anterior. ¿Seguro?")) return; }
-        if (juegoExpirado(partido) && !esPrivilegiado) { alert("El tiempo de tolerancia (10 min) ha expirado."); return; }
+        if (juegoExpirado(partido) && !esPrivilegiado) { Swal.fire("El tiempo de tolerancia (10 min) ha expirado."); return; }
         
         var btn = document.getElementById('btn-enviar-lineup'); btn.innerText = "Guardando..."; btn.disabled = true;
         google.script.run.withSuccessHandler(res => { 
@@ -1158,7 +1182,7 @@
 
       function guardarCambioJugador() {
          let sustituto = document.getElementById('select-sustituto').value;
-         if(!sustituto) { alert("Selecciona un jugador del menú."); return; }
+         if(!sustituto) { Swal.fire("Selecciona un jugador del menú."); return; }
          let nombreNuevoCompleto = cambioActivo.nombreAnterior + " / " + sustituto;
          rostersScorebook[cambioActivo.lado][cambioActivo.indice] = nombreNuevoCompleto;
          cerrarModalCambio(); sincronizarConExcel(cambioActivo.lado);
