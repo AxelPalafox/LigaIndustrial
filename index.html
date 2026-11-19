@@ -8,15 +8,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
       body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
-      
-      /* CONFIGURACIÓN MÁXIMA - 3 COLUMNAS RÍGIDAS */
       .layout-global { 
           display: flex; 
           flex-direction: row; 
-          flex-wrap: nowrap !important; /* 🔥 FORZA A QUE NUNCA SE CAIGAN ABAJO */
-          justify-content: space-between; /* 🔥 EMPUJA TOTALMENTE A LAS ORILLAS */
+          flex-wrap: nowrap !important;
+          justify-content: space-between;
           width: 100%; 
-          max-width: 1400px; /* 🔥 MUCHO MÁS ANCHO PARA DAR ESPACIO */
+          max-width: 1400px;
           margin: 0 auto; 
           align-items: flex-start;
           padding: 0 15px;
@@ -24,7 +22,7 @@
       }
       
       .panel-lateral { 
-          flex: 0 0 160px; /* Ancho fijo para las fotos */
+          flex: 0 0 160px;
           margin: 15px 0; 
           display: flex; 
           flex-direction: column; 
@@ -33,6 +31,7 @@
           position: sticky; 
           top: 70px; 
       }
+      
       .img-lateral { width: 100%; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
       
       .contenedor { 
@@ -41,11 +40,10 @@
           width: 100%; 
           padding: 15px; 
           padding-bottom: 50px; 
-          margin: 0 auto; /* Crea una pared invisible para que no choquen */
+          margin: 0 auto;
           min-width: 0; 
       }
       
-      /* CELULARES Y TABLETS: */
       @media (max-width: 950px) { 
         .layout-global { flex-direction: column !important; align-items: center; justify-content: flex-start; } 
         .panel-lateral { flex: none; position: static; width: 100%; flex-direction: row; justify-content: center; flex-wrap: wrap; margin: 10px 0; padding: 0; } 
@@ -127,8 +125,7 @@
   <body>
 
     <script>
-      // ⚠️ NO OLVIDES PEGAR AQUÍ TU URL DE GOOGLE APPS SCRIPT:
-      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzq_vrxztcvrVx66auSaxIKDPwqjQTFVTeGDpWIhNIdvMeFJUX-n7NlXspg83FDAHM/exec";
+      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVnnFXAEW1fRPhaAIJq8BQLFX18WTK7jhpS5vyajo6OLp2Ow1Vf1oo44AsHf-kC6zh/exec";
 
       const google = {
         script: {
@@ -456,26 +453,19 @@
       });
 
       function cambiarPantalla(id, boton) {
-        // 1. Oculta todas las pantallas y desactiva los botones
         document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa')); 
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         
-        // 2. Muestra la pantalla solicitada y activa su botón
         document.getElementById(id).classList.add('activa'); 
         boton.classList.add('active'); 
         
-        // 🔥 3. CONTROL INTELIGENTE DE PUBLICIDAD 🔥
         let banners = document.querySelectorAll('.panel-lateral');
         
-        // Si entramos al Anotador o al Acceso, ocultamos los banners
         if(id === 'pantalla-anotador' || id === 'pantalla-acceso') {
            banners.forEach(b => b.style.display = 'none');
         } else {
-           // En cualquier otra pestaña, los volvemos a mostrar
            banners.forEach(b => b.style.display = 'flex');
         }
-
-        // Cargar datos extras si es necesario
         if(id === 'pantalla-anotador') llenarSelectorAnotador();
         if(id === 'pantalla-estadisticas') cargarEstadisticas();
       }
@@ -645,10 +635,8 @@
             selE.innerHTML = '<option value="">Selecciona equipo...</option>'; 
             selR.innerHTML = '<option value="">Selecciona un equipo a editar...</option>'; 
             selDel.innerHTML = '<option value="">Selecciona equipo a eliminar...</option>';
-            
             let unicos = []; 
             
-            // 1. Extraemos solo los equipos reales (ignoramos los Drafts aquí)
             equipos.forEach(e => { 
                 let nombreEquipo = e[1];
                 if(nombreEquipo && !unicos.includes(nombreEquipo) && !nombreEquipo.includes("AGENCIA LIBRE")) {
@@ -656,7 +644,6 @@
                 } 
             }); 
             
-            // 2. Insertamos los Drafts manualmente (Solo para Ver y Editar, NO para Eliminar)
             let opcionesDraft = `
               <option value="AGENCIA LIBRE A">🔥 DRAFT - CATEGORÍA A</option>
               <option value="AGENCIA LIBRE B">🔥 DRAFT - CATEGORÍA B</option>
@@ -664,7 +651,6 @@
             selE.innerHTML += opcionesDraft;
             selR.innerHTML += opcionesDraft;
 
-            // 3. Insertamos el resto de equipos alfabéticamente en los 3 menús
             unicos.sort().forEach(e => { 
                 let opt = `<option value="${e}">${e}</option>`;
                 selE.innerHTML += opt; 
@@ -913,7 +899,6 @@
         var partido = document.getElementById('equipo-select-partido').value; 
         var btn = document.getElementById('btn-enviar-lineup');
         
-        // Limpiamos los checkboxes visualmente
         document.querySelectorAll('.chk-jugador').forEach(cb => { 
            cb.checked = false; 
            let sel = document.getElementById('pos-' + cb.id.substring(4)); 
@@ -977,7 +962,7 @@
          }); 
          vista.innerHTML = html + '</ol>'; 
       }
-      // ESTA ES LA FUNCIÓN QUE FALTABA
+        
       function juegoExpirado(partidoInfo) {
         let p = todosLosPartidos.find(x => `${x[0]} ${x[1]} | ${x[3]} vs ${x[4]}` === partidoInfo);
         if(!p) return false; let fStr = p[0]; let hStr = p[1]; if (!fStr) return false;
@@ -1123,7 +1108,7 @@
         let out3PorInning = []; for(let inn=0; inn<10; inn++) { out3PorInning[inn] = -1; for(let i=0; i<maxJugadores; i++) { if(datosScorebook[lado][i][inn] && datosScorebook[lado][i][inn].out === 3) { out3PorInning[inn] = i; break; } } }
         let inicioInning = []; inicioInning[0] = 0; for(let inn=0; inn<9; inn++) { if(out3PorInning[inn] !== -1) { inicioInning[inn+1] = (out3PorInning[inn] + 1) % maxJugadores; } }
 
-        let esInvitado = (equipoActivoGlobal === ""); // COMPRUEBA SI ES UN VISITANTE
+        let esInvitado = (equipoActivoGlobal === "");
 
         for(let i=0; i < maxJugadores; i++) {
           let nombre = jugadores[i] || ""; let tr = document.createElement('tr'); 
@@ -1131,7 +1116,7 @@
           let tdJug = document.createElement('td'); tdJug.className = 'col-jugador'; tdJug.style.textTransform = 'capitalize';
           
           if(nombre !== "") {
-             if(!esInvitado) { // Si está logueado, le permite hacer clic
+             if(!esInvitado) {
                  tdJug.style.cursor = 'pointer'; tdJug.title = "Haz clic para registrar un cambio de jugador";
                  tdJug.onclick = function() { abrirModalCambio(lado, i, nombre); };
              } else {
@@ -1150,7 +1135,7 @@
               
               td.className = `${bloqueadaClass} ${iniciaClass}`; 
               
-              if(!esInvitado) { // Solo permite hacer clic en el turno si está logueado
+              if(!esInvitado) {
                  td.onclick = function() { abrirModal(this, nombre, inn, lado, i); };
               } else {
                  td.style.cursor = 'default';
@@ -1225,8 +1210,7 @@
           else { toast.innerText = "❌ Error al guardar en Excel"; toast.style.backgroundColor = "#d32f2f"; setTimeout(() => { toast.style.display = 'none'; toast.innerText = "💾 Guardado en Excel"; toast.style.backgroundColor = "#2e7d32"; }, 3000); }
         }).guardarScorebookEnExcel(infoPartidoActivo.info, equipoAnotandoReal, datosAEnviar, rosterAEnviar);
       }
-      // 1. Llena el selector de equipos cuando entras a la pestaña
-// Función para extraer Equipos + Opción de Draft
+    
       function prepararSelectorPlantillas() {
         const select = document.getElementById('select-equipo-plantilla');
         if (!select) return;
@@ -1236,23 +1220,20 @@
         google.script.run.withSuccessHandler(equipos => {
           let unicos = [];
           
-          // Filtramos los equipos reales
           equipos.forEach(eq => { 
               let nombreEquipo = eq[1];
-              // Ignoramos los vacíos y la "AGENCIA LIBRE" para la lista normal
+              
               if(nombreEquipo && !unicos.includes(nombreEquipo) && nombreEquipo !== "AGENCIA LIBRE") {
                   unicos.push(nombreEquipo); 
               }
           });
           
-          // 1. AGREGAMOS EL DRAFT COMO PRIMERA OPCIÓN ESTRELLA
           let draftOption = document.createElement('option');
-          draftOption.value = "AGENCIA LIBRE"; // Debe coincidir con lo que dice en tu Excel
+          draftOption.value = "AGENCIA LIBRE";
           draftOption.text = "🔥 DRAFT / AGENCIA LIBRE";
           draftOption.style.fontWeight = "bold";
           select.appendChild(draftOption);
 
-          // 2. AGREGAMOS EL RESTO DE LOS EQUIPOS
           unicos.sort().forEach(nombre => {
               let option = document.createElement('option');
               option.value = nombre;
@@ -1263,7 +1244,6 @@
         }).obtenerEquipos();
       }
 
-// 2. Trae los jugadores y los muestra en una tabla limpia
 function mostrarJugadoresPlantilla() {
   const equipo = document.getElementById('select-equipo-plantilla').value;
   const contenedor = document.getElementById('lista-jugadores-plantilla');
@@ -1275,7 +1255,6 @@ function mostrarJugadoresPlantilla() {
 
   contenedor.innerHTML = '<p style="text-align:center; color:#999;">Consultando lista...</p>';
 
-  // Usamos la función del servidor que trae el roster
   google.script.run.withSuccessHandler(jugadores => {
     if (!jugadores || jugadores.length === 0) {
       contenedor.innerHTML = "<p style='text-align:center; color:red;'>No hay jugadores registrados en este equipo.</p>";
@@ -1293,7 +1272,7 @@ function mostrarJugadoresPlantilla() {
         <tbody>`;
 
     jugadores.forEach((jugador, i) => {
-      // AQUÍ ESTÁ LA MAGIA: Agregamos el onclick, cambiamos el cursor y el color
+    
       html += `
         <tr style="border-bottom: 1px solid #f1f1f1;">
           <td style="padding: 10px; color: #aaa; font-weight: bold;">${i + 1}</td>
@@ -1310,7 +1289,6 @@ function mostrarJugadoresPlantilla() {
     </script>
     <script>
       function abrirCredencialVirtual() {
-  // 1. Pedimos el nombre del jugador
   Swal.fire({
     title: 'Buscador de Jugadores',
     input: 'text',
@@ -1323,7 +1301,6 @@ function mostrarJugadoresPlantilla() {
     if (result.isConfirmed && result.value.trim() !== "") {
       let nombreBusqueda = result.value.trim();
       
-      // 2. Mostramos pantalla de carga
       Swal.fire({
         title: 'Buscando...',
         html: 'Rastreando credencial y movimientos.',
@@ -1331,10 +1308,8 @@ function mostrarJugadoresPlantilla() {
         didOpen: () => { Swal.showLoading() }
       });
 
-      // 3. Ejecutamos la búsqueda en la base de datos
       google.script.run.withSuccessHandler(datos => {
         
-        // 4. Armamos la tabla de historial
         let tablaHTML = `<div style="max-height: 200px; overflow-y: auto; margin-top: 15px;">
                           <table style="width: 100%; font-size: 13px; text-align: left; border-collapse: collapse;">
                             <thead style="background: #f1f1f1; position: sticky; top: 0;">
@@ -1359,7 +1334,6 @@ function mostrarJugadoresPlantilla() {
         }
         tablaHTML += `</tbody></table></div>`;
 
-        // 5. Dibujamos la Credencial final
         Swal.fire({
           title: 'Credencial Virtual',
           width: '600px',
@@ -1391,7 +1365,6 @@ function mostrarJugadoresPlantilla() {
   });
 }
       function verCredencial(nombreJugador) {
-  // 1. Mostramos pantalla de carga inmediatamente
   Swal.fire({
     title: 'Cargando...',
     html: 'Buscando la ficha de <b>' + nombreJugador + '</b>',
@@ -1399,10 +1372,8 @@ function mostrarJugadoresPlantilla() {
     didOpen: () => { Swal.showLoading() }
   });
 
-  // 2. Ejecutamos la búsqueda en la base de datos
   google.script.run.withSuccessHandler(datos => {
     
-    // 3. Armamos la tabla de historial
     let tablaHTML = `<div style="max-height: 200px; overflow-y: auto; margin-top: 15px;">
                       <table style="width: 100%; font-size: 13px; text-align: left; border-collapse: collapse;">
                         <thead style="background: #f1f1f1; position: sticky; top: 0;">
@@ -1427,7 +1398,6 @@ function mostrarJugadoresPlantilla() {
     }
     tablaHTML += `</tbody></table></div>`;
 
-    // 4. Dibujamos la Credencial final
     Swal.fire({
       title: 'Credencial Virtual',
       width: '600px',
