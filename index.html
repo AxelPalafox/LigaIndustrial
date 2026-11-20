@@ -125,7 +125,7 @@
   <body>
 
     <script>
-      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzB2qu2KFRbdI1MyKUFMeRDK8tUHJ--4gvy5TKlaoqKZbpaX9AUkP7oeM4TlL2VO-YX/exec";
+      const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjZ2ypolGMVI6nlJTzW5oYKQcjR-owJOjk9w3R7OcvsQPZNmNjhEYYJ-BX8zVAFjZN/exec";
 
       const google = {
         script: {
@@ -857,34 +857,69 @@
     const file = input.files[0];
     if (!file) return;
 
-    // Ponemos la foto opaca y mostramos que está cargando
-    document.getElementById('fotoCredencial').style.opacity = '0.5';
-    Swal.showLoading();
+    const fotoImg = document.getElementById('fotoCredencial');
+    const labelBtn = document.querySelector('label[for="inputFoto"]');
+    const textoOriginal = labelBtn ? labelBtn.innerHTML : '📷 Cambiar Foto';
+
+    if (fotoImg) fotoImg.style.opacity = '0.5';
+    if (labelBtn) labelBtn.innerHTML = '⏳ Subiendo...';
 
     const reader = new FileReader();
-    reader.onloadend = function() {
-        const base64data = reader.result;
-        const mimeType = file.type;
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            // COMPRESIÓN DE LA IMAGEN
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 150; // Tamaño ideal para la credencial
+            const MAX_HEIGHT = 150;
+            let width = img.width;
+            let height = img.height;
 
-        // Enviamos la foto a Google Apps Script usando tu mismo método
-        google.script.run.withSuccessHandler(res => {
-            if(res && !res.toString().includes("ERROR")) {
-                // Si todo sale bien, actualizamos la imagen en la credencial
-                document.getElementById('fotoCredencial').src = res;
-                document.getElementById('fotoCredencial').style.opacity = '1';
-                Swal.hideLoading();
-                Swal.fire({icon: 'success', title: 'Foto guardada', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000});
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
             } else {
-                Swal.fire('Error', 'No se pudo subir la foto: ' + res, 'error');
-                document.getElementById('fotoCredencial').style.opacity = '1';
+                if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
             }
-        }).withFailureHandler(err => {
-            Swal.fire('Error', 'Falla de conexión al subir foto.', 'error');
-            document.getElementById('fotoCredencial').style.opacity = '1';
-        }).subirFotoJugadorGS(nombreJugador, base64data, mimeType);
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Convertimos a base64 pero más ligero (JPEG al 70% de calidad)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            google.script.run.withSuccessHandler(res => {
+                if(res && !res.toString().includes("ERROR")) {
+                    if (fotoImg) {
+                        fotoImg.src = res;
+                        fotoImg.style.opacity = '1';
+                    }
+                    if (labelBtn) labelBtn.innerHTML = textoOriginal;
+                    
+                    Swal.fire({
+                        icon: 'success', title: 'Foto guardada', toast: true, 
+                        position: 'top-end', showConfirmButton: false, timer: 3000
+                    });
+                } else {
+                    Swal.fire('Error', 'No se pudo subir: ' + res, 'error');
+                    if (fotoImg) fotoImg.style.opacity = '1';
+                    if (labelBtn) labelBtn.innerHTML = textoOriginal;
+                }
+            }).withFailureHandler(err => {
+                Swal.fire('Error', 'Falla de conexión al subir foto.', 'error');
+                if (fotoImg) fotoImg.style.opacity = '1';
+                if (labelBtn) labelBtn.innerHTML = textoOriginal;
+            }).subirFotoJugadorGS(nombreJugador, dataUrl, 'image/jpeg'); // Mandamos la imagen ligera
+        };
+        img.src = event.target.result;
     };
-    
-    // Leemos el archivo
     reader.readAsDataURL(file);
 }
 
